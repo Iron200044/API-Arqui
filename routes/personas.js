@@ -1,0 +1,94 @@
+const express = require("express");
+const router = express.Router();
+const Persona = require("../models/persona");
+const Entrenamiento = require("../models/entrenamiento");
+const Asistencia = require("../models/asistencia");
+const Pago = require("../models/pago");
+const Participacion = require("../models/participacion");
+const Torneo = require("../models/torneo");
+
+// Crear una nueva persona
+router.post("/", async (req, res) => {
+    try {
+      const nuevaPersona = new Persona(req.body);
+      await nuevaPersona.save();
+      res.status(201).json(nuevaPersona);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+// Obtener todas las personas
+router.get("/", async (req, res) => {
+    try {
+      const personas = await Persona.find();
+      res.status(200).json(personas);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+// Obtener una persona por ID
+router.get("/:id", async (req, res) => {
+    try {
+      const persona = await Persona.findById(req.params.id);
+      if (!persona) return res.status(404).json({ message: "Persona no encontrada" });
+      res.status(200).json(persona);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // Actualizar una persona
+  router.put("/:id", async (req, res) => {
+    try {
+      const personaActualizada = await Persona.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      res.status(200).json(personaActualizada);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+  
+  // Eliminar una persona
+  router.delete("/:id", async (req, res) => {
+    try {
+      await Persona.findByIdAndDelete(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Obtener toda la información de una persona
+router.get("/:id/detalles", async (req, res) => {
+    try {
+      const personaId = req.params.id;
+  
+      // Buscar la persona
+      const persona = await Persona.findById(personaId);
+      if (!persona) return res.status(404).json({ message: "Persona no encontrada" });
+  
+      // Consultar las entidades relacionadas
+      const entrenamientos = await Entrenamiento.find();
+      const asistencias = await Asistencia.find({ idPersona: personaId }).populate("idEntrenamiento");
+      const pagos = await Pago.find({ idPersona: personaId });
+      const participaciones = await Participacion.find({ idPersona: personaId }).populate("idTorneo");
+      const torneos = participaciones.map((participacion) => participacion.idTorneo);
+  
+      // Crear respuesta consolidada
+      const respuesta = {
+        persona,
+        entrenamientos,
+        asistencias,
+        pagos,
+        participaciones,
+        torneos,
+      };
+  
+      res.status(200).json(respuesta);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  module.exports = router;
