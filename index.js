@@ -13,14 +13,30 @@ connectDB();
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(express.json());
+app.use(
+    cors({
+      origin: '*',
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Include OPTIONS method
+      credentials: true, // If you're using cookies or sessions
+    })
+  );
+
+// Endpoint de prueba
+app.get('/', (req, res) => {
+    res.send('Hola mundo');
+});
+
 
 // Rutas
-app.use("/api/personas", require("./routes/persona"));
-app.use("/api/torneos", require("./routes/torneos"));
-app.use("/api/participaciones", require("./routes/participacion"));
-app.use("/api/pagos", require("./routes/pagos"));
-app.use("/api/asistencias", require("./routes/asistencias"));
-app.use("/api/entrenamientos", require("./routes/entrenamientos"));
+app.use("/personas", require("./routes/personas"));
+app.use("/torneos", require("./routes/torneos"));
+app.use("/participaciones", require("./routes/participantes"));
+app.use("/pagos", require("./routes/pagos"));
+app.use("/asistencias", require("./routes/asistencias"));
+app.use("/entrenamientos", require("./routes/entrenamientos"));
 
+// Servidor corriendo
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
 

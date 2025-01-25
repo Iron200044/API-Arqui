@@ -1,18 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const Entrenamiento = require("../models/entrenamiento");
-const Persona = require("../models/persona");
 
 // Crear un nuevo entrenamiento
 router.post("/", async (req, res) => {
-  const { nombre, fecha, duracion } = req.body;
+  const { fecha, hora } = req.body;
 
   try {
+    // Validar datos requeridos
+    if (!fecha || !hora) {
+      return res.status(400).json({ message: "Fecha y hora son obligatorios" });
+    }
+
     // Crear el entrenamiento
     const nuevoEntrenamiento = new Entrenamiento({
-      nombre,
       fecha,
-      duracion,
+      hora,
     });
 
     const entrenamientoGuardado = await nuevoEntrenamiento.save();
@@ -24,21 +27,21 @@ router.post("/", async (req, res) => {
 
 // Actualizar un entrenamiento
 router.put("/:id", async (req, res) => {
-  const { nombre, fecha, duracion } = req.body;
+  const { fecha, hora } = req.body;
 
   try {
+    // Buscar el entrenamiento a actualizar
     const entrenamientoExistente = await Entrenamiento.findById(req.params.id);
     if (!entrenamientoExistente) {
       return res.status(404).json({ message: "Entrenamiento no encontrado" });
     }
 
-    entrenamientoExistente.nombre = nombre || entrenamientoExistente.nombre;
-    entrenamientoExistente.fecha = fecha || entrenamientoExistente.fecha;
-    entrenamientoExistente.duracion = duracion || entrenamientoExistente.duracion;
+    // Actualizar solo los campos proporcionados
+    if (fecha) entrenamientoExistente.fecha = fecha;
+    if (hora) entrenamientoExistente.hora = hora;
 
-    await entrenamientoExistente.save();
-
-    res.status(200).json(entrenamientoExistente);
+    const entrenamientoActualizado = await entrenamientoExistente.save();
+    res.status(200).json(entrenamientoActualizado);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -49,6 +52,32 @@ router.get("/", async (req, res) => {
   try {
     const entrenamientos = await Entrenamiento.find();
     res.status(200).json(entrenamientos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Obtener un entrenamiento por ID
+router.get("/:id", async (req, res) => {
+  try {
+    const entrenamiento = await Entrenamiento.findById(req.params.id);
+    if (!entrenamiento) {
+      return res.status(404).json({ message: "Entrenamiento no encontrado" });
+    }
+    res.status(200).json(entrenamiento);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Eliminar un entrenamiento
+router.delete("/:id", async (req, res) => {
+  try {
+    const entrenamientoEliminado = await Entrenamiento.findByIdAndDelete(req.params.id);
+    if (!entrenamientoEliminado) {
+      return res.status(404).json({ message: "Entrenamiento no encontrado" });
+    }
+    res.status(200).json({ message: "Entrenamiento eliminado con éxito" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

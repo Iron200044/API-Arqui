@@ -6,29 +6,13 @@ const Participacion = require("../models/participacion");
 
 // Crear un nuevo torneo
 router.post("/", async (req, res) => {
-  const { nombreTorneo, fecha, idParticipante } = req.body;
+  const { nombreTorneo, fecha} = req.body;
 
   try {
     // Crear el torneo
     const torneo = new Torneo({ nombreTorneo, fecha });
 
-    // Verificar si los participantes existen
-    const participantes = await Persona.find({ '_id': { $in: idParticipante } });
-
-    if (participantes.length === 0) {
-      return res.status(400).json({ message: "No se encontraron participantes" });
-    }
-
     const torneoGuardado = await torneo.save();
-
-    // Crear las participaciones
-    idParticipante.forEach(async (id) => {
-      const participacion = new Participacion({
-        idPersona: id,
-        idTorneo: torneoGuardado._id,
-      });
-      await participacion.save();
-    });
 
     res.status(201).json(torneoGuardado);
   } catch (error) {
@@ -38,7 +22,7 @@ router.post("/", async (req, res) => {
 
 // Actualizar un torneo
 router.put("/:id", async (req, res) => {
-  const { nombreTorneo, fecha, idParticipante } = req.body;
+  const { nombreTorneo, fecha} = req.body;
 
   try {
     // Buscar el torneo
@@ -51,21 +35,6 @@ router.put("/:id", async (req, res) => {
     torneo.nombreTorneo = nombreTorneo || torneo.nombreTorneo;
     torneo.fecha = fecha || torneo.fecha;
     await torneo.save();
-
-    // Actualizar participaciones si es necesario
-    if (idParticipante) {
-      // Eliminar participaciones antiguas
-      await Participacion.deleteMany({ idTorneo: req.params.id });
-
-      // Crear nuevas participaciones
-      idParticipante.forEach(async (id) => {
-        const participacion = new Participacion({
-          idPersona: id,
-          idTorneo: torneo._id,
-        });
-        await participacion.save();
-      });
-    }
 
     res.status(200).json(torneo);
   } catch (error) {

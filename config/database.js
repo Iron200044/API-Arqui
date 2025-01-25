@@ -1,15 +1,18 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://sacerogarcia:RhFb4Fh1miLzZSYM@apidb.bj0a5dr.mongodb.net/', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    // Reemplaza con tu cadena de conexión
+    const uri = "mongodb+srv://sacerogarcia:sCeAUjNvLcYX726@cluster0.ox7dn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000, // Tiempo máximo para conectarse al servidor
     });
-    console.log('Database connected successfully');
+
+    console.log("Conexión exitosa a MongoDB");
   } catch (error) {
-    console.error('Database connection error:', error);
-    process.exit(1); // Detener la aplicación si hay un error de conexión
+    console.error("Error al conectar a MongoDB:", error.message);
+    process.exit(1); // Finaliza el proceso en caso de error
   }
 };
 
