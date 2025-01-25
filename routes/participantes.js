@@ -6,17 +6,15 @@ const Persona = require("../models/persona");
 
 // Crear una nueva participación
 router.post("/", async (req, res) => {
-  const { idTorneo, idPersona, puestoObtenido } = req.body;
+  const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
 
   try {
-    // Validar datos requeridos
-    if (!idTorneo || !idPersona || puestoObtenido == null) {
+    if (!idTorneo || !idPersona || puestoObtenido == null || partidosJugados == null) {
       return res
         .status(400)
-        .json({ message: "idTorneo, idPersona y puestoObtenido son obligatorios" });
+        .json({ message: "idTorneo, idPersona, puestoObtenido y partidosJugados son obligatorios" });
     }
 
-    // Validar que el torneo y la persona existan
     const torneo = await Torneo.findById(idTorneo);
     if (!torneo) {
       return res.status(404).json({ message: "Torneo no encontrado" });
@@ -27,11 +25,14 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "Persona no encontrada" });
     }
 
-    // Crear la participación
+    const promedioParticipacion = puestoObtenido / (partidosJugados || 1); // Evitar dividir por 0
+
     const nuevaParticipacion = new Participacion({
       idTorneo,
       idPersona,
       puestoObtenido,
+      partidosJugados,
+      promedioParticipacion,
     });
 
     const participacionGuardada = await nuevaParticipacion.save();
@@ -41,18 +42,15 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Actualizar una participación
 router.put("/:id", async (req, res) => {
-  const { idTorneo, idPersona, puestoObtenido } = req.body;
+  const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
 
   try {
-    // Buscar la participación a actualizar
     const participacionExistente = await Participacion.findById(req.params.id);
     if (!participacionExistente) {
       return res.status(404).json({ message: "Participación no encontrada" });
     }
 
-    // Validar que los IDs de torneo y persona existan si se van a actualizar
     if (idTorneo) {
       const torneo = await Torneo.findById(idTorneo);
       if (!torneo) {
@@ -72,6 +70,14 @@ router.put("/:id", async (req, res) => {
     if (puestoObtenido != null) {
       participacionExistente.puestoObtenido = puestoObtenido;
     }
+
+    if (partidosJugados != null) {
+      participacionExistente.partidosJugados = partidosJugados;
+    }
+
+    // Recalcular promedio
+    participacionExistente.promedioParticipacion =
+      participacionExistente.puestoObtenido / (participacionExistente.partidosJugados || 1);
 
     const participacionActualizada = await participacionExistente.save();
     res.status(200).json(participacionActualizada);
