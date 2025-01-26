@@ -20,12 +20,18 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "Torneo no encontrado" });
     }
 
+    if (torneo.partidosTotales <= 0) {
+      return res
+        .status(400)
+        .json({ message: "El torneo debe tener un valor válido de partidos totales" });
+    }
+
     const persona = await Persona.findById(idPersona);
     if (!persona) {
       return res.status(404).json({ message: "Persona no encontrada" });
     }
 
-    const promedioParticipacion = puestoObtenido / (partidosJugados || 1); // Evitar dividir por 0
+    const promedioParticipacion = partidosJugados / torneo.partidosTotales;
 
     const nuevaParticipacion = new Participacion({
       idTorneo,
@@ -42,6 +48,7 @@ router.post("/", async (req, res) => {
   }
 });
 
+//Actualizar una participacion
 router.put("/:id", async (req, res) => {
   const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
 
@@ -55,6 +62,11 @@ router.put("/:id", async (req, res) => {
       const torneo = await Torneo.findById(idTorneo);
       if (!torneo) {
         return res.status(404).json({ message: "Torneo no encontrado" });
+      }
+      if (torneo.partidosTotales <= 0) {
+        return res
+          .status(400)
+          .json({ message: "El torneo debe tener un valor válido de partidos totales" });
       }
       participacionExistente.idTorneo = idTorneo;
     }
@@ -76,8 +88,11 @@ router.put("/:id", async (req, res) => {
     }
 
     // Recalcular promedio
-    participacionExistente.promedioParticipacion =
-      participacionExistente.puestoObtenido / (participacionExistente.partidosJugados || 1);
+    const torneoActual = await Torneo.findById(participacionExistente.idTorneo);
+    if (torneoActual && torneoActual.partidosTotales > 0) {
+      participacionExistente.promedioParticipacion =
+        participacionExistente.partidosJugados / torneoActual.partidosTotales;
+    }
 
     const participacionActualizada = await participacionExistente.save();
     res.status(200).json(participacionActualizada);
@@ -85,6 +100,7 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // Obtener todas las participaciones
 router.get("/", async (req, res) => {

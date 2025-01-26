@@ -6,12 +6,17 @@ const Participacion = require("../models/participacion");
 
 // Crear un nuevo torneo
 router.post("/", async (req, res) => {
-  const { nombreTorneo, fecha} = req.body;
+  const { nombreTorneo, fecha, partidosTotales } = req.body;
 
   try {
-    // Crear el torneo
-    const torneo = new Torneo({ nombreTorneo, fecha });
+    if (!nombreTorneo || !fecha || partidosTotales == null) {
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son obligatorios: nombreTorneo, fecha y partidosTotales" });
+    }
 
+    // Crear el torneo con todos los campos
+    const torneo = new Torneo({ nombreTorneo, fecha, partidosTotales });
     const torneoGuardado = await torneo.save();
 
     res.status(201).json(torneoGuardado);
@@ -22,21 +27,21 @@ router.post("/", async (req, res) => {
 
 // Actualizar un torneo
 router.put("/:id", async (req, res) => {
-  const { nombreTorneo, fecha} = req.body;
+  const { nombreTorneo, fecha, partidosTotales } = req.body;
 
   try {
-    // Buscar el torneo
     const torneo = await Torneo.findById(req.params.id);
     if (!torneo) {
       return res.status(404).json({ message: "Torneo no encontrado" });
     }
 
-    // Actualizar el torneo
-    torneo.nombreTorneo = nombreTorneo || torneo.nombreTorneo;
-    torneo.fecha = fecha || torneo.fecha;
-    await torneo.save();
+    // Actualizar campos si están presentes
+    if (nombreTorneo) torneo.nombreTorneo = nombreTorneo;
+    if (fecha) torneo.fecha = fecha;
+    if (partidosTotales != null) torneo.partidosTotales = partidosTotales;
 
-    res.status(200).json(torneo);
+    const torneoActualizado = await torneo.save();
+    res.status(200).json(torneoActualizado);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
