@@ -60,7 +60,7 @@ router.get("/", async (req, res) => {
 // Obtener un torneo por su ID
 router.get("/:id", async (req, res) => {
   try {
-    const torneo = await Torneo.findById(req.params.id).populate("idParticipante");
+    const torneo = await Torneo.findById(req.params.id);
     if (!torneo) {
       return res.status(404).json({ message: "Torneo no encontrado" });
     }
