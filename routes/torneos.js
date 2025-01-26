@@ -47,6 +47,16 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// Obtener todos los torneos
+router.get("/", async (req, res) => {
+  try {
+    const torneos = await Torneo.find(); // Devuelve todos los torneos
+    res.status(200).json(torneos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Obtener un torneo por su ID
 router.get("/:id", async (req, res) => {
   try {
