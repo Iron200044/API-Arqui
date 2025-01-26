@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
 });
 
 // Actualizar un torneo
-router.put("/:id", async (req, res) => {
+router.put("/actualizar/:id", async (req, res) => {
   const { nombreTorneo, fecha, partidosTotales } = req.body;
 
   try {
