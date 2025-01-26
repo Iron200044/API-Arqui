@@ -61,4 +61,15 @@ router.get("/persona/:id", async (req, res) => {
   }
 });
 
+// Obtener asistentes por entrenamiento
+router.get("/entrenamiento/:id", async (req, res) => {
+  try {
+    const idEntrenamiento = req.params.id;
+    const asistencias = await Asistencia.find({ idEntrenamiento }).populate("idPersona");
+    res.status(200).json(asistencias);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
