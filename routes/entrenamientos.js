@@ -70,6 +70,32 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Buscar entrenamientos por fecha
+router.get("/buscar/fecha/:fecha", async (req, res) => {
+  try {
+    const entrenamientos = await Entrenamiento.find({ fecha: req.params.fecha });
+    if (entrenamientos.length === 0) {
+      return res.status(404).json({ message: "No se encontraron entrenamientos en la fecha indicada" });
+    }
+    res.status(200).json(entrenamientos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Buscar entrenamientos por hora
+router.get("/buscar/hora/:hora", async (req, res) => {
+  try {
+    const entrenamientos = await Entrenamiento.find({ hora: req.params.hora });
+    if (entrenamientos.length === 0) {
+      return res.status(404).json({ message: "No se encontraron entrenamientos en la hora indicada" });
+    }
+    res.status(200).json(entrenamientos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Eliminar un entrenamiento
 router.delete("/:id", async (req, res) => {
   try {
