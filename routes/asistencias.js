@@ -61,4 +61,22 @@ router.get("/persona/:id", async (req, res) => {
   }
 });
 
+// Obtener todas las asistencias a un entrenamiento por su ID
+router.get("/entrenamiento/:id", async (req, res) => {
+  try {
+    const idEntrenamiento = req.params.id;
+
+    // Buscar asistencias por ID de entrenamiento y poblar datos de las personas
+    const asistencias = await Asistencia.find({ idEntrenamiento }).populate("idPersona");
+    
+    if (!asistencias.length) {
+      return res.status(404).json({ message: "No se encontraron asistencias para este entrenamiento." });
+    }
+
+    res.status(200).json(asistencias);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
