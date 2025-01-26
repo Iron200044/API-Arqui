@@ -70,4 +70,17 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Eliminar un torneo por ID
+router.delete("/:id", async (req, res) => {
+  try {
+    const torneoEliminado = await Torneo.findByIdAndDelete(req.params.id);
+    if (!torneoEliminado) {
+      return res.status(404).json({ message: "Torneo no encontrado" });
+    }
+    res.status(200).json({ message: "Torneo eliminado con éxito", torneo: torneoEliminado });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

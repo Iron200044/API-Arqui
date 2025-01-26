@@ -101,7 +101,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-
+  
 // Obtener todas las participaciones
 router.get("/", async (req, res) => {
   try {
