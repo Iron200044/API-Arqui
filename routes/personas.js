@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Persona = require("../models/persona");
 const Entrenamiento = require("../models/entrenamiento");
 const Asistencia = require("../models/asistencia");
@@ -81,26 +82,59 @@ router.get("/:id", async (req, res) => {
 // Actualizar una persona
 router.put("/:id", async (req, res) => {
   try {
-    const errores = validarPersona(req.body);
+    // Solo validamos los campos presentes en la solicitud
+    const errores = [];
+
+    if (req.body.nombre && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(req.body.nombre)) {
+      errores.push("El nombre solo debe contener letras y espacios, sin caracteres especiales.");
+    }
+
+    if (req.body.apellido && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(req.body.apellido)) {
+      errores.push("El apellido solo debe contener letras y espacios, sin caracteres especiales.");
+    }
+
+    if (req.body.fechaNacimiento && !/^\d{2}-\d{2}-\d{4}$/.test(req.body.fechaNacimiento)) {
+      errores.push("La fecha de nacimiento debe estar en formato dd-mm-aaaa.");
+    }
+
+    if (req.body.telefono && !/^\d{10}$/.test(req.body.telefono)) {
+      errores.push("El teléfono debe contener exactamente 10 dígitos numéricos.");
+    }
+
+    if (req.body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+      errores.push("El email debe ser válido (ejemplo@correo.com).");
+    }
+
+    if (req.body.direccion && /["']/.test(req.body.direccion)) {
+      errores.push("Este campo no puede contener comillas ni ningun tipo de caracter especial.");
+    }
+
     if (errores.length > 0) {
       return res.status(400).json({ message: errores });
     }
 
-    const personaActualizada = await Persona.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // Buscar la persona por ID
+    const persona = await Persona.findById(req.params.id);
+    if (!persona) {
+      return res.status(404).json({ message: "Persona no encontrada" });
+    }
+
+    // Actualizamos solo los campos proporcionados
+    const { nombre, apellido, fechaNacimiento, telefono, direccion, email } = req.body;
+
+    if (nombre) persona.nombre = nombre;
+    if (apellido) persona.apellido = apellido;
+    if (fechaNacimiento) persona.fechaNacimiento = fechaNacimiento;
+    if (telefono) persona.telefono = telefono;
+    if (direccion) persona.direccion = direccion;
+    if (email) persona.email = email;
+
+    // Guardamos la persona actualizada
+    const personaActualizada = await persona.save();
     res.status(200).json(personaActualizada);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-});
-  
-  // Eliminar una persona
-  router.delete("/:id", async (req, res) => {
-    try {
-      await Persona.findByIdAndDelete(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
 });
 
   // Obtener toda la información de una persona
