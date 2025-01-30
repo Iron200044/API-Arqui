@@ -11,7 +11,7 @@ const validarTorneo = (datos) => {
 
   // Expresiones regulares
   const regexNombreTorneo = /^[a-zA-Z0-9\s]+$/; // Solo letras, números y espacios
-  const regexFecha = /^\d{2}-\d{2}-\d{4}$/; // Formato dd-mm-aaaa
+  const regexFecha = /^\d{4}-\d{2}-\d{2}$/; // Formato dd-mm-aaaa
   const regexNumero = /^\d+$/; // Solo números positivos
   const regexComillas = /["']/; // Detecta comillas simples o dobles
 
@@ -43,12 +43,6 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: errores });
     }
 
-    // Convertir fecha manualmente antes de guardar
-    if (req.body.fecha) {
-      const partes = req.body.fecha.split("-");
-      req.body.fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`); // dd-mm-aaaa → aaaa-mm-dd
-    }
-
     const torneo = new Torneo(req.body);
     const torneoGuardado = await torneo.save();
     res.status(201).json(torneoGuardado);
@@ -69,13 +63,7 @@ router.put("/actualizar/:id", async (req, res) => {
     if (errores.length > 0) {
       return res.status(400).json({ message: errores });
     }
-
-    // Convertir fecha antes de actualizar
-    if (req.body.fecha) {
-      const partes = req.body.fecha.split("-");
-      req.body.fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
-    }
-
+    
     Object.assign(torneo, req.body);
     const torneoActualizado = await torneo.save();
     res.status(200).json(torneoActualizado);

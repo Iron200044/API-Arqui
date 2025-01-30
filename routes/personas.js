@@ -14,7 +14,7 @@ const validarPersona = (datos) => {
 
   // Expresiones regulares
   const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/; // Solo letras y espacios
-  const regexFecha = /^\d{2}-\d{2}-\d{4}$/; // Formato dd-mm-aaaa
+  const regexFecha = /^\d{4}-\d{2}-\d{2}$/; // Formato dd-mm-aaaa
   const regexTelefono = /^\d{10}$/; // Exactamente 10 números
   const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validar email
   const regexComillas = /["']/; // Detecta comillas simples o dobles
@@ -93,7 +93,7 @@ router.put("/:id", async (req, res) => {
       errores.push("El apellido solo debe contener letras y espacios, sin caracteres especiales.");
     }
 
-    if (req.body.fechaNacimiento && !/^\d{2}-\d{2}-\d{4}$/.test(req.body.fechaNacimiento)) {
+    if (req.body.fechaNacimiento && !/^\d{4}-\d{2}-\d{2}$/.test(req.body.fechaNacimiento)) {
       errores.push("La fecha de nacimiento debe estar en formato dd-mm-aaaa.");
     }
 
