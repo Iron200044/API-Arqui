@@ -7,16 +7,55 @@ const Pago = require("../models/pago");
 const Participacion = require("../models/participacion");
 const Torneo = require("../models/torneo");
 
+// Función para validar los datos de la persona
+const validarPersona = (datos) => {
+  const errores = [];
+
+  // Expresiones regulares
+  const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/; // Solo letras y espacios
+  const regexFecha = /^\d{2}-\d{2}-\d{4}$/; // Formato dd-mm-aaaa
+  const regexTelefono = /^\d{10}$/; // Exactamente 10 números
+  const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Validar email
+  const regexComillas = /["']/; // Detecta comillas simples o dobles
+
+  // Validaciones
+  if (!regexNombre.test(datos.nombre)) {
+    errores.push("El nombre solo debe contener letras y espacios, sin caracteres especiales.");
+  }
+  if (!regexNombre.test(datos.apellido)) {
+    errores.push("El apellido solo debe contener letras y espacios, sin caracteres especiales.");
+  }
+  if (!regexFecha.test(datos.fechaNacimiento)) {
+    errores.push("La fecha de nacimiento debe estar en formato dd-mm-aaaa.");
+  }
+  if (!regexTelefono.test(datos.telefono)) {
+    errores.push("El teléfono debe contener exactamente 10 dígitos numéricos.");
+  }
+  if (!regexEmail.test(datos.email)) {
+    errores.push("El email debe ser válido (ejemplo@correo.com).");
+  }
+  if (regexComillas.test(datos.direccion)) {
+    errores.push("Este campo no puede contener comillas ni ningun tipo de caracter especial.");
+  }
+
+  return errores;
+};
+
 // Crear una nueva persona
 router.post("/", async (req, res) => {
-    try {
-      const nuevaPersona = new Persona(req.body);
-      await nuevaPersona.save();
-      res.status(201).json(nuevaPersona);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+  try {
+    const errores = validarPersona(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
     }
-  });
+
+    const nuevaPersona = new Persona(req.body);
+    await nuevaPersona.save();
+    res.status(201).json(nuevaPersona);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 // Obtener todas las personas
 router.get("/", async (req, res) => {
@@ -39,15 +78,20 @@ router.get("/:id", async (req, res) => {
     }
   });
   
-  // Actualizar una persona
-  router.put("/:id", async (req, res) => {
-    try {
-      const personaActualizada = await Persona.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      res.status(200).json(personaActualizada);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
+// Actualizar una persona
+router.put("/:id", async (req, res) => {
+  try {
+    const errores = validarPersona(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
     }
-  });
+
+    const personaActualizada = await Persona.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json(personaActualizada);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
   
   // Eliminar una persona
   router.delete("/:id", async (req, res) => {
@@ -57,7 +101,7 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
+});
 
   // Obtener toda la información de una persona
 router.get("/:id/detalles", async (req, res) => {

@@ -4,21 +4,52 @@ const Torneo = require("../models/torneo");
 const Persona = require("../models/persona");
 const Participacion = require("../models/participacion");
 
+// Función para validar los datos del torneo
+const validarTorneo = (datos) => {
+  const errores = [];
+
+  // Expresiones regulares
+  const regexNombreTorneo = /^[a-zA-Z0-9\s]+$/; // Solo letras, números y espacios
+  const regexFecha = /^\d{2}-\d{2}-\d{4}$/; // Formato dd-mm-aaaa
+  const regexNumero = /^\d+$/; // Solo números positivos
+  const regexComillas = /["']/; // Detecta comillas simples o dobles
+
+  // Validaciones
+  if (!datos.nombreTorneo || !datos.fecha || datos.partidosTotales === undefined) {
+    errores.push("Todos los campos son obligatorios: nombreTorneo, fecha y partidosTotales.");
+  }
+  if (!regexNombreTorneo.test(datos.nombreTorneo)) {
+    errores.push("El nombre del torneo solo debe contener letras, números y espacios.");
+  }
+  if (!regexFecha.test(datos.fecha)) {
+    errores.push("La fecha debe estar en formato dd-mm-aaaa.");
+  }
+  if (!regexNumero.test(datos.partidosTotales) || datos.partidosTotales < 0) {
+    errores.push("Los partidos totales deben ser un número entero mayor o igual a 0.");
+  }
+  if (regexComillas.test(datos.nombreTorneo)) {
+    errores.push("El nombre del torneo no debe contener comillas ni ningun tipo de caracter especial.");
+  }
+
+  return errores;
+};
+
 // Crear un nuevo torneo
 router.post("/", async (req, res) => {
-  const { nombreTorneo, fecha, partidosTotales } = req.body;
-
   try {
-    if (!nombreTorneo || !fecha || partidosTotales == null) {
-      return res
-        .status(400)
-        .json({ message: "Todos los campos son obligatorios: nombreTorneo, fecha y partidosTotales" });
+    const errores = validarTorneo(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
     }
 
-    // Crear el torneo con todos los campos
-    const torneo = new Torneo({ nombreTorneo, fecha, partidosTotales });
-    const torneoGuardado = await torneo.save();
+    // Convertir fecha manualmente antes de guardar
+    if (req.body.fecha) {
+      const partes = req.body.fecha.split("-");
+      req.body.fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`); // dd-mm-aaaa → aaaa-mm-dd
+    }
 
+    const torneo = new Torneo(req.body);
+    const torneoGuardado = await torneo.save();
     res.status(201).json(torneoGuardado);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -27,19 +58,24 @@ router.post("/", async (req, res) => {
 
 // Actualizar un torneo
 router.put("/actualizar/:id", async (req, res) => {
-  const { nombreTorneo, fecha, partidosTotales } = req.body;
-
   try {
     const torneo = await Torneo.findById(req.params.id);
     if (!torneo) {
       return res.status(404).json({ message: "Torneo no encontrado" });
     }
 
-    // Actualizar campos si están presentes
-    if (nombreTorneo) torneo.nombreTorneo = nombreTorneo;
-    if (fecha) torneo.fecha = fecha;
-    if (partidosTotales != null) torneo.partidosTotales = partidosTotales;
+    const errores = validarTorneo(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
+    }
 
+    // Convertir fecha antes de actualizar
+    if (req.body.fecha) {
+      const partes = req.body.fecha.split("-");
+      req.body.fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}`);
+    }
+
+    Object.assign(torneo, req.body);
     const torneoActualizado = await torneo.save();
     res.status(200).json(torneoActualizado);
   } catch (error) {

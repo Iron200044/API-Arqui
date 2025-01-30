@@ -2,22 +2,47 @@ const express = require("express");
 const router = express.Router();
 const Entrenamiento = require("../models/entrenamiento");
 
-// Crear un nuevo entrenamiento
-router.post("/", async (req, res) => {
+// Middleware de validación
+const validarEntrenamiento = (req, res, next) => {
   const { fecha, hora } = req.body;
 
+  // Validar campos requeridos
+  if (!fecha || !hora) {
+    return res.status(400).json({ message: "Fecha y hora son obligatorios" });
+  }
+
+  // Validar formato de fecha (DD-MM-YYYY y solo con "-")
+  const regexFecha = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regexFecha.test(fecha)) {
+    return res.status(400).json({ message: "Formato de fecha inválido. Debe ser YYYY-MM-DD y solo usar '-'" });
+  }
+
+  // Validar si la fecha es real
+  const fechaObj = new Date(fecha);
+  if (isNaN(fechaObj.getTime())) {
+    return res.status(400).json({ message: "Fecha inválida" });
+  }
+
+  // No permitir fechas en el pasado
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  if (fechaObj < hoy) {
+    return res.status(400).json({ message: "No se pueden registrar entrenamientos en el pasado" });
+  }
+
+  // Validar formato de hora (HH:MM y solo con ":")
+  const regexHora = /^\d{2}:\d{2}$/;
+  if (!regexHora.test(hora)) {
+    return res.status(400).json({ message: "Formato de hora inválido. Debe ser HH:MM y solo usar ':'" });
+  }
+
+  next();
+};
+
+// Crear un nuevo entrenamiento
+router.post("/", validarEntrenamiento, async (req, res) => {
   try {
-    // Validar datos requeridos
-    if (!fecha || !hora) {
-      return res.status(400).json({ message: "Fecha y hora son obligatorios" });
-    }
-
-    // Crear el entrenamiento
-    const nuevoEntrenamiento = new Entrenamiento({
-      fecha,
-      hora,
-    });
-
+    const nuevoEntrenamiento = new Entrenamiento(req.body);
     const entrenamientoGuardado = await nuevoEntrenamiento.save();
     res.status(201).json(entrenamientoGuardado);
   } catch (error) {

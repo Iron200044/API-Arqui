@@ -4,41 +4,54 @@ const Participacion = require("../models/participacion");
 const Torneo = require("../models/torneo");
 const Persona = require("../models/persona");
 
-// Crear una nueva participación
+const validarParticipacion = async ({ idTorneo, idPersona, puestoObtenido, partidosJugados }) => {
+  let errores = [];
+
+  if (!idTorneo) errores.push("El campo idTorneo es obligatorio.");
+  if (!idPersona) errores.push("El campo idPersona es obligatorio.");
+  if (puestoObtenido == null) errores.push("El campo puestoObtenido es obligatorio.");
+  if (partidosJugados == null) errores.push("El campo partidosJugados es obligatorio.");
+
+  // Validar puestoObtenido
+  if (puestoObtenido < 1) errores.push("El puesto obtenido debe ser mayor o igual a 1.");
+
+  // Validar partidosJugados
+  if (partidosJugados < 0) errores.push("El número de partidos jugados no puede ser negativo.");
+
+  // Verificar si el torneo existe y obtener sus datos
+  const torneo = await Torneo.findById(idTorneo);
+  if (!torneo) {
+    errores.push("El torneo no existe.");
+  } else if (torneo.partidosTotales <= 0) {
+    errores.push("El torneo debe tener un número válido de partidos totales.");
+  } else if (partidosJugados > torneo.partidosTotales) {
+    errores.push("Los partidos jugados no pueden superar los partidos totales del torneo.");
+  }
+
+  // Verificar si la persona existe
+  const persona = await Persona.findById(idPersona);
+  if (!persona) errores.push("La persona no existe.");
+
+  return errores;
+};
+
+//Crear una nueva participación
 router.post("/", async (req, res) => {
-  const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
-
   try {
-    if (!idTorneo || !idPersona || puestoObtenido == null || partidosJugados == null) {
-      return res
-        .status(400)
-        .json({ message: "idTorneo, idPersona, puestoObtenido y partidosJugados son obligatorios" });
+    const errores = await validarParticipacion(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
     }
 
+    const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
     const torneo = await Torneo.findById(idTorneo);
-    if (!torneo) {
-      return res.status(404).json({ message: "Torneo no encontrado" });
-    }
-
-    if (torneo.partidosTotales <= 0) {
-      return res
-        .status(400)
-        .json({ message: "El torneo debe tener un valor válido de partidos totales" });
-    }
-
-    const persona = await Persona.findById(idPersona);
-    if (!persona) {
-      return res.status(404).json({ message: "Persona no encontrada" });
-    }
-
-    const promedioParticipacion = partidosJugados / torneo.partidosTotales;
 
     const nuevaParticipacion = new Participacion({
       idTorneo,
       idPersona,
       puestoObtenido,
       partidosJugados,
-      promedioParticipacion,
+      promedioParticipacion: partidosJugados / torneo.partidosTotales,
     });
 
     const participacionGuardada = await nuevaParticipacion.save();
@@ -50,42 +63,24 @@ router.post("/", async (req, res) => {
 
 //Actualizar una participacion
 router.put("/:id", async (req, res) => {
-  const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
-
   try {
     const participacionExistente = await Participacion.findById(req.params.id);
     if (!participacionExistente) {
-      return res.status(404).json({ message: "Participación no encontrada" });
+      return res.status(404).json({ message: "Participación no encontrada." });
     }
 
-    if (idTorneo) {
-      const torneo = await Torneo.findById(idTorneo);
-      if (!torneo) {
-        return res.status(404).json({ message: "Torneo no encontrado" });
-      }
-      if (torneo.partidosTotales <= 0) {
-        return res
-          .status(400)
-          .json({ message: "El torneo debe tener un valor válido de partidos totales" });
-      }
-      participacionExistente.idTorneo = idTorneo;
+    // Validar los nuevos datos antes de actualizar
+    const errores = await validarParticipacion(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ message: errores });
     }
 
-    if (idPersona) {
-      const persona = await Persona.findById(idPersona);
-      if (!persona) {
-        return res.status(404).json({ message: "Persona no encontrada" });
-      }
-      participacionExistente.idPersona = idPersona;
-    }
+    const { idTorneo, idPersona, puestoObtenido, partidosJugados } = req.body;
 
-    if (puestoObtenido != null) {
-      participacionExistente.puestoObtenido = puestoObtenido;
-    }
-
-    if (partidosJugados != null) {
-      participacionExistente.partidosJugados = partidosJugados;
-    }
+    if (idTorneo) participacionExistente.idTorneo = idTorneo;
+    if (idPersona) participacionExistente.idPersona = idPersona;
+    if (puestoObtenido != null) participacionExistente.puestoObtenido = puestoObtenido;
+    if (partidosJugados != null) participacionExistente.partidosJugados = partidosJugados;
 
     // Recalcular promedio
     const torneoActual = await Torneo.findById(participacionExistente.idTorneo);
@@ -100,6 +95,7 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 
   
 // Obtener todas las participaciones

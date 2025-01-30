@@ -1,29 +1,47 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Asistencia = require("../models/asistencia");
 const Persona = require("../models/persona");
 const Entrenamiento = require("../models/entrenamiento");
 
-// Crear una nueva asistencia
-router.post("/", async (req, res) => {
+// Middleware de validación de asistencia
+const validarAsistencia = async (req, res, next) => {
   const { idPersona, idEntrenamiento, asistencia } = req.body;
+  const errores = [];
 
-  try {
-    // Verificar si la persona y el entrenamiento existen
+  // Validar que idPersona sea un ObjectId válido
+  if (!mongoose.Types.ObjectId.isValid(idPersona)) {
+    errores.push("El ID de la persona no es válido.");
+  } else {
     const persona = await Persona.findById(idPersona);
+    if (!persona) errores.push("Persona no encontrada.");
+  }
+
+  // Validar que idEntrenamiento sea un ObjectId válido
+  if (!mongoose.Types.ObjectId.isValid(idEntrenamiento)) {
+    errores.push("El ID del entrenamiento no es válido.");
+  } else {
     const entrenamiento = await Entrenamiento.findById(idEntrenamiento);
+    if (!entrenamiento) errores.push("Entrenamiento no encontrado.");
+  }
 
-    if (!persona || !entrenamiento) {
-      return res.status(400).json({ message: "Persona o Entrenamiento no válido" });
-    }
+  // Validar que asistencia sea booleano
+  if (typeof asistencia !== "boolean") {
+    errores.push("El campo asistencia debe ser un valor booleano (true o false).");
+  }
 
-    // Crear la asistencia
-    const nuevaAsistencia = new Asistencia({
-      idPersona,
-      idEntrenamiento,
-      asistencia,
-    });
+  if (errores.length > 0) {
+    return res.status(400).json({ message: errores });
+  }
 
+  next();
+};
+
+// Crear una nueva asistencia
+router.post("/", validarAsistencia, async (req, res) => {
+  try {
+    const nuevaAsistencia = new Asistencia(req.body);
     const asistenciaGuardada = await nuevaAsistencia.save();
     res.status(201).json(asistenciaGuardada);
   } catch (error) {
@@ -31,20 +49,27 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Actualizar una asistencia
 router.put("/:id", async (req, res) => {
-  const { asistencia } = req.body;
-
   try {
     const asistenciaExistente = await Asistencia.findById(req.params.id);
     if (!asistenciaExistente) {
       return res.status(404).json({ message: "Asistencia no encontrada" });
     }
 
-    asistenciaExistente.asistencia = asistencia || asistenciaExistente.asistencia;
-    await asistenciaExistente.save();
+    const { asistencia } = req.body;
+    const camposAActualizar = {};
 
-    res.status(200).json(asistenciaExistente);
+    if (asistencia !== undefined) {
+      if (typeof asistencia !== "boolean") {
+        return res.status(400).json({ message: "El campo asistencia debe ser un valor booleano (true o false)." });
+      }
+      camposAActualizar.asistencia = asistencia;
+    }
+
+    // Actualizar solo los campos proporcionados
+    const asistenciaActualizada = await Asistencia.findByIdAndUpdate(req.params.id, camposAActualizar, { new: true });
+
+    res.status(200).json(asistenciaActualizada);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
