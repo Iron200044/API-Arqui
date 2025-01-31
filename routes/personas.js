@@ -92,6 +92,23 @@ router.get("/uid/:uid", async (req, res) => {
   }
 });
 
+// Obtener solo el rol de una persona por UID
+router.get("/uid/:uid/role", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    // Buscar la persona por UID
+    const persona = await Persona.findOne({ uid });
+    if (!persona) {
+      return res.status(404).json({ message: "Persona no encontrada con ese UID" });
+    }
+
+    // Devolver solo el rol
+    res.status(200).json({ role: persona.role });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
   
 // Actualizar una persona
 router.put("/:id", async (req, res) => {
