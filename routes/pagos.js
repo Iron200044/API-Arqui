@@ -123,4 +123,23 @@ router.get("/persona/:id", async (req, res) => {
   }
 });
 
+// Obtener pagos de una persona por UID
+router.get("/persona/uid/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    // Buscar la persona por su UID
+    const persona = await Persona.findOne({ uid });
+    if (!persona) {
+      return res.status(404).json({ message: "Persona no encontrada." });
+    }
+
+    // Buscar los pagos relacionados con la persona encontrada
+    const pagos = await Pago.find({ idPersona: persona._id });
+    res.status(200).json(pagos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
