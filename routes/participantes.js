@@ -96,8 +96,6 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
   
 // Obtener todas las participaciones
 router.get("/", async (req, res) => {
@@ -122,6 +120,33 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "Participación no encontrada" });
     }
     res.status(200).json(participacion);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Obtener todas las participaciones de una persona por su UID
+router.get("/persona/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    // Buscar la persona por su UID
+    const persona = await Persona.findOne({ uid });
+
+    if (!persona) {
+      return res.status(404).json({ message: "No se encontró una persona con el UID proporcionado." });
+    }
+
+    // Buscar todas las participaciones asociadas al ID de la persona encontrada
+    const participaciones = await Participacion.find({ idPersona: persona._id })
+      .populate("idTorneo", "nombre fecha") // Datos adicionales del torneo
+      .populate("idPersona", "nombre edad"); // Datos adicionales de la persona
+
+    if (participaciones.length === 0) {
+      return res.status(404).json({ message: "No se encontraron participaciones para esta persona." });
+    }
+
+    res.status(200).json(participaciones);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

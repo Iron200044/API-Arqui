@@ -49,6 +49,7 @@ router.post("/", validarAsistencia, async (req, res) => {
   }
 });
 
+//Actualizar una asistencia
 router.put("/:id", async (req, res) => {
   try {
     const asistenciaExistente = await Asistencia.findById(req.params.id);
@@ -80,6 +81,31 @@ router.get("/persona/:id", async (req, res) => {
   try {
     const idPersona = req.params.id;
     const asistencias = await Asistencia.find({ idPersona }).populate("idEntrenamiento");
+    res.status(200).json(asistencias);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Obtener asistencias de una persona por su UID
+router.get("/persona/uid/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    // Buscar la persona por su UID
+    const persona = await Persona.findOne({ uid });
+
+    if (!persona) {
+      return res.status(404).json({ message: "No se encontró una persona con el UID proporcionado." });
+    }
+
+    // Buscar asistencias relacionadas con el ID de la persona encontrada
+    const asistencias = await Asistencia.find({ idPersona: persona._id }).populate("idEntrenamiento");
+
+    if (asistencias.length === 0) {
+      return res.status(404).json({ message: "No se encontraron asistencias para esta persona." });
+    }
+
     res.status(200).json(asistencias);
   } catch (error) {
     res.status(500).json({ message: error.message });
