@@ -109,6 +109,26 @@ router.get("/uid/:uid/role", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Obtener personas por rol
+router.get("/role/:role", async (req, res) => {
+  try {
+    const { role } = req.params; // Extraer el rol de los parámetros de la ruta
+
+    // Buscar personas que coincidan con el rol
+    const personas = await Persona.find({ role });
+
+    // Verificar si se encontraron personas con ese rol
+    if (personas.length === 0) {
+      return res.status(404).json({ message: "No se encontraron personas con este rol" });
+    }
+
+    res.status(200).json(personas); // Devolver las personas encontradas
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener personas", error: error.message });
+  }
+});
+
   
 // Actualizar una persona
 router.put("/:id", async (req, res) => {
