@@ -66,7 +66,7 @@ router.get("/", async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
+});
 
 // Obtener una persona por ID
 router.get("/:id", async (req, res) => {
@@ -77,7 +77,21 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
+});
+
+// Obtener una persona por UID de Firebase
+router.get("/uid/:uid", async (req, res) => {
+  try {
+      const persona = await Persona.findOne({ uid: req.params.uid });
+      if (!persona) {
+          return res.status(404).json({ message: "Persona no encontrada con ese UID" });
+      }
+      res.status(200).json(persona);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+});
+
   
 // Actualizar una persona
 router.put("/:id", async (req, res) => {
